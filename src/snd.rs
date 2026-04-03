@@ -7,9 +7,14 @@ use walkdir::WalkDir;
 
 use crate::discovery;
 
-pub async fn run(paths: Vec<PathBuf>, port: u16, data_port: u16) -> Result<()> {
-    println!("Discovering hosts on LAN...");
-    let hosts = discovery::discover(port, 3).await?;
+pub async fn run(paths: Vec<PathBuf>) -> Result<()> {
+    let spinner = ProgressBar::new_spinner();
+    spinner.set_style(ProgressStyle::default_spinner().template("{spinner} {msg}")?);
+    spinner.set_message("Discovering hosts on LAN...");
+    spinner.enable_steady_tick(std::time::Duration::from_millis(80));
+
+    let hosts = discovery::discover(3).await?;
+    spinner.finish_and_clear();
 
     if hosts.is_empty() {
         anyhow::bail!("No hosts found. Make sure the receiver is running `lancp rcv`.");
@@ -28,7 +33,7 @@ pub async fn run(paths: Vec<PathBuf>, port: u16, data_port: u16) -> Result<()> {
     }
 
     println!("Connecting to {}...", host);
-    let mut stream = TcpStream::connect((host.addr, data_port))
+    let mut stream = TcpStream::connect((host.addr, host.port))
         .await
         .context("Failed to connect to host")?;
 

@@ -6,14 +6,20 @@ use tokio::net::TcpListener;
 
 use crate::discovery;
 
-pub async fn run(port: u16, data_port: u16) -> Result<()> {
-    println!("Listening for transfers on port {}...", data_port);
-    println!("Press Ctrl+C to stop.\n");
-
+pub async fn run(data_port: u16) -> Result<()> {
     let listener = TcpListener::bind(("0.0.0.0", data_port)).await?;
 
+    let local_addrs = discovery::local_ipv4_addrs();
+    let addr_list = if local_addrs.is_empty() {
+        "unknown".to_string()
+    } else {
+        local_addrs.iter().map(|a| a.to_string()).collect::<Vec<_>>().join(", ")
+    };
+    println!("Announcing on LAN [{}]", addr_list);
+    println!("Waiting for senders on port {} — press Ctrl+C to stop.\n", data_port);
+
     tokio::spawn(async move {
-        if let Err(e) = discovery::announce(port).await {
+        if let Err(e) = discovery::announce(data_port).await {
             eprintln!("Announcement error: {}", e);
         }
     });
