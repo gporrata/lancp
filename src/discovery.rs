@@ -22,16 +22,40 @@ impl std::fmt::Display for Host {
 /// Broadcast presence as a receiver on `port`. Runs until cancelled.
 pub async fn announce(port: u16) -> Result<()> {
     let socket = UdpSocket::bind(("0.0.0.0", 0)).await?;
+    socket.set_broadcast(true)?;
     socket.set_multicast_ttl_v4(1)?; // link-local only
-    let dest = SocketAddr::new(MULTICAST_ADDR.into(), port);
+    let multicast_dest = SocketAddr::new(MULTICAST_ADDR.into(), port);
     let hostname = hostname::get()
         .map(|h| h.to_string_lossy().into_owned())
         .unwrap_or_else(|_| "unknown".to_string());
     let msg = format!("LANCP_RCV:{}", hostname);
     loop {
-        socket.send_to(msg.as_bytes(), dest).await?;
+        // Primary: multicast
+        socket.send_to(msg.as_bytes(), multicast_dest).await?;
+
+        // Fallback: subnet-directed broadcast on each local interface
+        for bcast in subnet_broadcasts() {
+            let dest = SocketAddr::new(bcast.into(), port);
+            let _ = socket.send_to(msg.as_bytes(), dest).await;
+        }
+
         tokio::time::sleep(Duration::from_millis(500)).await;
     }
+}
+
+/// Returns the IPv4 broadcast address for each non-loopback local interface.
+fn subnet_broadcasts() -> Vec<Ipv4Addr> {
+    if_addrs::get_if_addrs()
+        .unwrap_or_default()
+        .into_iter()
+        .filter_map(|iface| {
+            if let if_addrs::IfAddr::V4(v4) = iface.addr {
+                if !v4.ip.is_loopback() { v4.broadcast } else { None }
+            } else {
+                None
+            }
+        })
+        .collect()
 }
 
 /// Listen for receiver announcements for `timeout_secs` and return discovered hosts.

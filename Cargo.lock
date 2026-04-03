@@ -236,6 +236,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "if-addrs"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cbc0fa01ffc752e9dbc72818cdb072cd028b86be5e09dd04c5a643704fe101a9"
+dependencies = [
+ "libc",
+ "winapi",
+]
+
+[[package]]
 name = "indicatif"
 version = "0.17.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -288,6 +298,7 @@ dependencies = [
  "anyhow",
  "clap",
  "hostname",
+ "if-addrs",
  "indicatif",
  "inquire",
  "socket2 0.5.10",
