@@ -1,0 +1,8 @@
+.*
+!.gitignore
+
+target/
+
+*.log
+*.bz2
+*.zip

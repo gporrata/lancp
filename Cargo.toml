@@ -1,0 +1,17 @@
+[package]
+name = "lancp"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "lancp"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+hostname = "0.3"
+indicatif = "0.17"
+inquire = "0.7"
+tokio = { version = "1", features = ["full"] }
+walkdir = "2"
