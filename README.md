@@ -42,7 +42,10 @@ Discovers receivers on the current LAN and copies files to the selected host. No
 
 Each path may be a file or directory:
 - Files are sent as-is.
-- Directories are traversed recursively. Hidden entries (files or directories beginning with `.`) are skipped entirely.
+- Directories are traversed recursively. Hidden entries (files or directories beginning with `.`) are skipped unless `--hidden` is passed.
+
+**Flags:**
+- `--hidden` — include hidden files and directories (those beginning with `.`) when traversing directories.
 
 ### `lancp rcv`
 

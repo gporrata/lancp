@@ -19,6 +19,9 @@ enum Commands {
         /// Files or directories to send
         #[arg(required = true)]
         paths: Vec<PathBuf>,
+        /// Include hidden files and directories (those beginning with '.')
+        #[arg(long)]
+        hidden: bool,
     },
     /// Receive files from a host on the LAN
     Rcv {
@@ -32,7 +35,7 @@ enum Commands {
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Snd { paths } => snd::run(paths).await,
+        Commands::Snd { paths, hidden } => snd::run(paths, hidden).await,
         Commands::Rcv { data_port } => rcv::run(data_port).await,
     }
 }

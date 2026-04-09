@@ -7,7 +7,7 @@ use walkdir::WalkDir;
 
 use crate::discovery;
 
-pub async fn run(paths: Vec<PathBuf>) -> Result<()> {
+pub async fn run(paths: Vec<PathBuf>, hidden: bool) -> Result<()> {
     let spinner = ProgressBar::new_spinner();
     spinner.set_style(ProgressStyle::default_spinner().template("{spinner} {msg}")?);
     spinner.set_message("Discovering hosts on LAN...");
@@ -27,7 +27,7 @@ pub async fn run(paths: Vec<PathBuf>) -> Result<()> {
     let idx = host_names.iter().position(|s| s == &selection).unwrap();
     let host = &hosts[idx];
 
-    let files = collect_files(&paths)?;
+    let files = collect_files(&paths, hidden)?;
     if files.is_empty() {
         anyhow::bail!("No files to send.");
     }
@@ -93,8 +93,9 @@ pub async fn run(paths: Vec<PathBuf>) -> Result<()> {
     Ok(())
 }
 
-/// Returns (absolute_path, relative_path, size) for every non-hidden file under `paths`.
-fn collect_files(paths: &[PathBuf]) -> Result<Vec<(PathBuf, String, u64)>> {
+/// Returns (absolute_path, relative_path, size) for every file under `paths`.
+/// Hidden entries (names beginning with `.`) are skipped unless `include_hidden` is true.
+fn collect_files(paths: &[PathBuf], include_hidden: bool) -> Result<Vec<(PathBuf, String, u64)>> {
     let mut files = Vec::new();
     for path in paths {
         if path.is_file() {
@@ -107,7 +108,10 @@ fn collect_files(paths: &[PathBuf]) -> Result<Vec<(PathBuf, String, u64)>> {
             files.push((path.clone(), rel, size));
         } else if path.is_dir() {
             let base = path.parent().unwrap_or(Path::new("."));
-            for entry in WalkDir::new(path).into_iter().filter_entry(|e| !is_hidden(e)) {
+            for entry in WalkDir::new(path)
+                .into_iter()
+                .filter_entry(|e| include_hidden || !is_hidden(e))
+            {
                 let entry = entry?;
                 if entry.file_type().is_file() {
                     let size = entry.metadata()?.len();
